@@ -1,0 +1,6 @@
+[submodule ".deps/pytools"]
+	path = .deps/pytools
+	url = git@github.com:willwiz/pytools.git
+[submodule ".deps/cheartpy"]
+	path = .deps/cheartpy
+	url = git@github.com:willwiz/cheartpy.git

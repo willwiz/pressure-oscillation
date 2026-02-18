@@ -1,0 +1,35 @@
+# Rust target directory for temporary files
+/rust/**/target
+# Byte-compiled / optimized / DLL files
+**/__pycache__/
+**/.pytest_cache/
+**/*.py[cod]
+
+# C extensions
+**/*.so
+
+# Distribution / packaging
+.Python
+.venv/
+env/
+bin/
+build/
+wheels/
+develop-eggs/
+dist/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+include/
+man/
+venv/
+**.egg-info/
+.installed.cfg
+*.egg
+*.py[oc]
+
+# Virtual environments
+.venv
