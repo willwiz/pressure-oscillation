@@ -19,14 +19,9 @@ def create_interface_coupling_problem(
     fvars: FluidVariables,
     **kwargs: Unpack[OptionalKwargs],
 ) -> FSCouplingProblem:
-    lm = create_variable(
-        "IfLM",
-        top.bnd,
-        2,
-        freq=kwargs.get("freq", -1),
-        fmt="BINARY" if kwargs.get("binary", False) else "TXT",
-    )
-    xb = create_variable("IfX", top.bnd, 2, data=top.bnd.mesh)
+    _fmt = "BINARY" if kwargs.get("binary", False) else "TXT"
+    lm = create_variable("IfLM", top.bnd, 2, fmt=_fmt, freq=kwargs.get("freq", -1))
+    xb = create_variable("IfX", top.bnd, 2, data=top.bnd.mesh, freq=kwargs.get("freq", -1))
     p = FSCouplingProblem("InterfaceCouplling", space=xb, root_top=top.bnd)
     p.set_lagrange_mult(lm, FSExpr(fvars.V, 1), FSExpr(svars.V, -1))
     p.add_term(fvars.V, FSExpr(lm, 1))

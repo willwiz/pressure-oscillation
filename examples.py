@@ -18,13 +18,28 @@ DEFAULT_MESH: TopDef = {
         1: {"name": "fluid_lin", "elem": "TRIANGLE_ELEMENT"},
         2: {"name": "fluid_quad", "elem": "TRIANGLE_ELEMENT"},
     },
-    "solid_bcpatch": {"inlet": 2, "interface": 4},
-    "fluid_bcpatch": {"inlet": 1, "interface": 4},
+    "solid_bcpatch": {"apex": 5, "inlet": 2, "interface": 4},
+    "fluid_bcpatch": {"apex": 5, "inlet": 1, "interface": 4},
 }
 
 
 TEST: ProblemDef = {
-    "output_dir": Path("test"),
+    "prefix": f"neohookean_{30}",
+    "output_dir": Path("results"),
     "time": {"start": 1, "end": 1000, "step": 0.001},
     "mesh": DEFAULT_MESH,
+    "loading": {"type": "DoubleSine", "period": 1.0, "max_vel": 200.0},
+    "material": {"type": "NeoHookean", "k": (30000,)},
 }
+
+PILOT_TESTS: list[ProblemDef] = [
+    {
+        "prefix": f"neohookean_{k}kPa",
+        "output_dir": Path("results"),
+        "time": {"start": 1, "end": 1000, "step": 0.001},
+        "mesh": DEFAULT_MESH,
+        "loading": {"type": "DoubleSine", "period": 1.0, "max_vel": 200.0},
+        "material": {"type": "NeoHookean", "k": (k * 1000,)},
+    }
+    for k in [5, 10, 20, 30, 40, 50]
+]

@@ -36,39 +36,69 @@ def create_problem_topology(mesh: TopDef) -> ProblemTopology:
         for i in [0, 1, 2]
     }
     fluidtops[0].discontinuous = True
-    bndtop = create_topology("TPBnd", basis=bndbasis, mesh=mesh["home"] / "bnd")
-    bndtop.create_in_boundary(solidtops[1], mesh["solid_bcpatch"]["interface"])
+    fsitop = create_topology("TPBnd", basis=bndbasis, mesh=mesh["home"] / "bnd")
+    fsitop.create_in_boundary(solidtops[1], mesh["solid_bcpatch"]["interface"])
+    inlettop = create_topology("TPInlet", basis=bndbasis, mesh=mesh["home"] / "inlet")
+    inlettop.create_in_boundary(fluidtops[1], mesh["fluid_bcpatch"]["inlet"])
+    apextop = create_topology("TPApex", basis=bndbasis, mesh=mesh["home"] / "apex")
+    apextop.create_in_boundary(fluidtops[1], mesh["fluid_bcpatch"]["apex"])
     solidbody = create_top_interface("OneToOne", [*solidtops.values()])
     fluidbody = create_top_interface("OneToOne", [*fluidtops.values()])
     fluid_interface = create_top_interface(
         "ManyToOne",
-        [bndtop],
+        [fsitop],
         master=fluidtops[2],
         interface_file=mesh["home"] / "iface-fluid.IN",
         nest_in_bnd=mesh["fluid_bcpatch"]["interface"],
     )
+    apx_interface = create_top_interface(
+        "ManyToOne",
+        [apextop],
+        master=fluidtops[2],
+        interface_file=mesh["home"] / "iface-apex.IN",
+        nest_in_bnd=mesh["fluid_bcpatch"]["apex"],
+    )
+    inlet_interface = create_top_interface(
+        "ManyToOne",
+        [inlettop],
+        master=fluidtops[2],
+        interface_file=mesh["home"] / "iface-inlet.IN",
+        nest_in_bnd=mesh["fluid_bcpatch"]["inlet"],
+    )
     solid_interface = create_top_interface(
         "ManyToOne",
-        [bndtop],
+        [fsitop],
         master=solidtops[2],
         interface_file=mesh["home"] / "iface-solid.IN",
         nest_in_bnd=mesh["solid_bcpatch"]["interface"],
     )
     return ProblemTopology(
-        {hash(h): h for h in [solid_interface, fluid_interface, solidbody, fluidbody]},
+        {
+            hash(h): h
+            for h in [
+                solid_interface,
+                fluid_interface,
+                inlet_interface,
+                apx_interface,
+                solidbody,
+                fluidbody,
+            ]
+        },
         fluid2=fluidtops[2],
         fluid1=fluidtops[1],
         fluid0=fluidtops[0],
         solid2=solidtops[2],
         solid1=solidtops[1],
-        bnd=bndtop,
+        inlet=inlettop,
+        apex=apextop,
+        bnd=fsitop,
     )
 
 
 def create_fluid_variables(top: ProblemTopology) -> FluidVariables:
     prefix = "Fluid"
     xt = create_variable(f"{prefix}Xt", top.fluid1, 2, data=top.fluid1.mesh)
-    x0 = create_variable(f"{prefix}X0", top.fluid1, 2, data=top.fluid1.mesh)
+    x0 = create_variable(f"{prefix}X0", top.fluid1, 2, data=top.fluid1.mesh, freq=-1)
     return FluidVariables(
         Xt=xt,
         X0=x0,
@@ -80,7 +110,7 @@ def create_fluid_variables(top: ProblemTopology) -> FluidVariables:
 
 def create_solid_variables(top: ProblemTopology) -> SolidVariables:
     prefix = "Solid"
-    x = create_variable(f"{prefix}X", top.solid2, 2, data=top.solid2.mesh)
+    x = create_variable(f"{prefix}X", top.solid2, 2, data=top.solid2.mesh, freq=-1)
     return SolidVariables(
         X=x,
         V=create_variable(f"{prefix}V", top.solid2, 2),
