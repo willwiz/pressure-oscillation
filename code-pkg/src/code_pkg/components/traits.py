@@ -12,13 +12,19 @@ class BCPatches(NamedTuple):
     ale: Sequence[IBCPatch]
 
 
-class DoubleSineCurve(TypedDict, total=True):
-    type: Literal["DoubleSine"]
-    period: float
+class SineCurve(TypedDict, total=True):
+    type: Literal["Sine"]
     max_vel: float
+    period: float
+    cycles: int
 
 
-LoadingCurveDef = DoubleSineCurve
+class HoldCurve(TypedDict, total=True):
+    type: Literal["Hold"]
+    duration: float
+
+
+LoadingCurveDef = SineCurve | HoldCurve
 
 
 class NeoHookeanMaterial(TypedDict, total=True):

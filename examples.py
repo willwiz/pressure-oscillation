@@ -28,7 +28,7 @@ TEST: ProblemDef = {
     "output_dir": Path("results"),
     "time": {"start": 1, "end": 1000, "step": 0.001},
     "mesh": DEFAULT_MESH,
-    "loading": {"type": "DoubleSine", "period": 1.0, "max_vel": 200.0},
+    "loading": [{"type": "Sine", "max_vel": 200.0, "period": 0.5, "cycles": 2}],
     "material": {"type": "NeoHookean", "k": (30000,)},
 }
 
@@ -38,7 +38,7 @@ PILOT_TESTS: list[ProblemDef] = [
         "output_dir": Path("results"),
         "time": {"start": 1, "end": 1000, "step": 0.001},
         "mesh": DEFAULT_MESH,
-        "loading": {"type": "DoubleSine", "period": 1.0, "max_vel": 200.0},
+        "loading": [{"type": "Sine", "period": 1.0, "cycles": 1, "max_vel": 200.0}],
         "material": {"type": "NeoHookean", "k": (k * 1000,)},
     }
     for k in [5, 10, 20, 30, 40, 50]

@@ -2,7 +2,7 @@ import dataclasses as dc
 from typing import TYPE_CHECKING, NamedTuple, TypedDict
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
     from pathlib import Path
 
     from cheartpy.fe.aliases import CheartElementType
@@ -41,7 +41,7 @@ class ProblemDef(TypedDict, total=True):
     output_dir: Path
     time: TimeDef
     mesh: TopDef
-    loading: LoadingCurveDef
+    loading: Sequence[LoadingCurveDef]
     material: MaterialDef
 
 

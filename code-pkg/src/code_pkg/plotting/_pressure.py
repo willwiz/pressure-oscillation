@@ -8,9 +8,9 @@ import numpy as np
 from pytools.plotting.api import (
     close_figure,
     create_figure,
-    update_axis_setting,
     update_figure_setting,
 )
+from pytools.result import Err, Ok, Result, all_ok
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -47,7 +47,6 @@ def plot_time_trace[F: np.floating](
             ax.legend() if len(data) <= _TOO_TALL else fig.legend(
                 loc="outside lower center", ncol=_TOO_TALL
             )
-    update_axis_setting(ax, **kwargs)
     fig.savefig(fout)
     close_figure(fig)
 
@@ -60,22 +59,30 @@ class PressureData[F: np.floating](NamedTuple):
 
 def import_pressure_data[F: np.floating](
     prob: ProblemDef, *, dtype: DType[F] = np.float64
-) -> PressureData[F]:
+) -> Result[PressureData[F]]:
     apex_file = prob["output_dir"] / prob["prefix"] / "apex_pressure-0.D"
     inlet_file = prob["output_dir"] / prob["prefix"] / "inlet_pressure-0.D"
     apex = np.loadtxt(apex_file)[:, 1]
     inlet = np.loadtxt(inlet_file)[:, 1]
     time = np.arange(prob["time"]["start"], prob["time"]["end"] + 1) * prob["time"]["step"]
-    return PressureData(time.astype(dtype), apex.astype(dtype), inlet.astype(dtype))
+    if len(time) != len(apex) or len(time) != len(inlet):
+        msg = f"Time length {len(time)} does not match data length {len(apex)}, {len(inlet)}"
+        return Err(ValueError(msg))
+    return Ok(PressureData(time.astype(dtype), apex.astype(dtype), inlet.astype(dtype)))
 
 
 def summarize_pressure_diff(prob: ProblemDef) -> None:
-    data = import_pressure_data(prob)
+    match import_pressure_data(prob):
+        case Ok(data):
+            pass
+        case Err(e):
+            print(e)
+            raise SystemExit(1)
     plot_time_trace(
         {
             "Apex": {"x": data.time, "y": data.apex},
             "Inlet": {"x": data.time, "y": data.inlet},
-            "Apex-Inlet": {"x": data.time, "y": data.apex - data.inlet},
+            "Inlet - Apex": {"x": data.time, "y": data.inlet - data.apex},
         },
         fout=prob["output_dir"] / f"{prob['prefix']}-pressure_diff.png",
         xlabel="Time [s]",
@@ -84,10 +91,15 @@ def summarize_pressure_diff(prob: ProblemDef) -> None:
 
 
 def summarize_pressure_diff_all(probs: Sequence[ProblemDef], **kwargs: Unpack[PlotKwargs]) -> None:
-    data = {prob["prefix"]: import_pressure_data(prob) for prob in probs}
-    kwargs = {"xlabel": "Time [s]", "ylabel": "Apex - Inlet [Pa]", **kwargs}
+    match all_ok({prob["prefix"]: import_pressure_data(prob) for prob in probs}):
+        case Ok(data):
+            pass
+        case Err(e):
+            print(e)
+            raise SystemExit(1)
+    kwargs = {"xlabel": "Time [s]", "ylabel": "Inlet - Apex [Pa]", **kwargs}
     plot_time_trace(
-        {k.split("_")[-1]: {"x": v.time, "y": v.apex - v.inlet} for k, v in data.items()},
+        {k.split("_")[-1]: {"x": v.time, "y": v.inlet - v.apex} for k, v in data.items()},
         fout=probs[0]["output_dir"] / "pressure_diff_all.png",
         **kwargs,
     )
