@@ -8,8 +8,11 @@ if TYPE_CHECKING:
     from cheartpy.fe.aliases import CheartElementType
     from cheartpy.fe.trait import ICheartTopology, ITopInterface, IVariable
 
+    from .components.traits import LoadingCurveDef, MaterialDef
+
 
 class BCPatchDef(TypedDict, total=True):
+    apex: int
     inlet: int
     interface: int
 
@@ -34,9 +37,12 @@ class TimeDef(TypedDict, total=True):
 
 
 class ProblemDef(TypedDict, total=True):
+    prefix: str
     output_dir: Path
     time: TimeDef
     mesh: TopDef
+    loading: LoadingCurveDef
+    material: MaterialDef
 
 
 @dc.dataclass(slots=True, frozen=True)
@@ -47,6 +53,8 @@ class ProblemTopology:
     fluid0: ICheartTopology
     solid2: ICheartTopology
     solid1: ICheartTopology
+    inlet: ICheartTopology
+    apex: ICheartTopology
     bnd: ICheartTopology
 
 

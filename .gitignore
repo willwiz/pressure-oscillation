@@ -39,3 +39,4 @@ TEST*.P
 Test*.P
 test
 mesh/*
+results/*
