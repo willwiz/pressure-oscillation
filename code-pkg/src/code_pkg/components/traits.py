@@ -24,7 +24,13 @@ class HoldCurve(TypedDict, total=True):
     duration: float
 
 
-LoadingCurveDef = SineCurve | HoldCurve
+class RampCurve(TypedDict, total=True):
+    type: Literal["Ramp"]
+    max_vel: float
+    duration: float
+
+
+LoadingCurveDef = SineCurve | HoldCurve | RampCurve
 
 
 class NeoHookeanMaterial(TypedDict, total=True):

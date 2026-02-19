@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Required, TypedDict, Unpack
 import numpy as np
 from cheartpy.fe.api import create_bcpatch, create_expr
 
-from .traits import BCPatches, HoldCurve, LoadingCurveDef, SineCurve
+from .traits import BCPatches, HoldCurve, LoadingCurveDef, RampCurve, SineCurve
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -32,12 +32,23 @@ def create_hold_curve(_name: str, _curve_def: HoldCurve, _start: float) -> None:
     return None
 
 
+def create_ramp_curve(name: str, curve_def: RampCurve, start: float) -> IExpression:
+    v = curve_def["max_vel"]
+    period = curve_def["duration"]
+    return create_expr(
+        name,
+        [f"{v:.8f}*min((t-{start:.4f})/{period:.4f}, 1)*(t>{start:.4f})*(t<{start + period:.4f})"],
+    )
+
+
 def create_bc_curve(name: str, curve_def: LoadingCurveDef, start: float) -> IExpression | None:
     match curve_def:
         case {"type": "Sine"}:
             return create_sine_curve(name, curve_def, start)
         case {"type": "Hold"}:
             return create_hold_curve(name, curve_def, start)
+        case {"type": "Ramp"}:
+            return create_ramp_curve(name, curve_def, start)
 
 
 def calc_bc_duration(curve_def: LoadingCurveDef) -> float:
@@ -45,6 +56,8 @@ def calc_bc_duration(curve_def: LoadingCurveDef) -> float:
         case {"type": "Sine"}:
             return curve_def["period"] * curve_def["cycles"]
         case {"type": "Hold"}:
+            return curve_def["duration"]
+        case {"type": "Ramp"}:
             return curve_def["duration"]
 
 
