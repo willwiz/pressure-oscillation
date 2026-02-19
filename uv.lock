@@ -470,6 +470,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "cheartpy", extra = ["all"] },
+    { name = "code-pkg" },
     { name = "optype", extra = ["numpy"] },
     { name = "pytools" },
 ]
@@ -477,6 +478,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "cheartpy", extras = ["all"], editable = ".deps/cheartpy" },
+    { name = "code-pkg", editable = "code-pkg" },
     { name = "optype", extras = ["numpy"], specifier = ">=0.15.0" },
     { name = "pytools", editable = ".deps/pytools" },
 ]

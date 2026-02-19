@@ -33,3 +33,9 @@ venv/
 
 # Virtual environments
 .venv
+
+
+TEST*.P
+Test*.P
+test
+mesh/*

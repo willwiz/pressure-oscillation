@@ -4,15 +4,15 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = ["optype[numpy]>=0.15.0", "pytools", "cheartpy[all]"]
+dependencies = ["optype[numpy]>=0.15.0", "pytools", "cheartpy[all]", "code-pkg"]
 
 
 [tool.uv]
 override-dependencies = ["pytools"]
 
 [tool.uv.sources]
+code-pkg = { workspace = true, editable = true }
 cheartpy = { path = ".deps/cheartpy", editable = true, package = true }
-code-pkg = { workspace = true }
 pytools = { path = ".deps/pytools", editable = true, package = true }
 
 [tool.uv.workspace]

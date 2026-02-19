@@ -1,0 +1,130 @@
+%FSCOUPLING
+%TOL 5e-9
+#dt=0.001
+#timestep=1 1000 #dt
+#Vscale=200
+#rhof=1.0e-3
+#muf=4e-3
+#rhos=1.0e-3
+#nhp=30000.0
+#pi = 3.141592
+
+#FluidVelocityTopology=meshes2/fluid_quad
+#FluidPressureTopology=meshes2/fluid
+#SolidVelocityTopology=meshes2/solid_quad
+#SolidPressureTopology=meshes2/solid
+#LmTopology=meshes2/lm_quad
+
+#FluidInterface=meshes2/fluid.IN
+#SolidInterface=meshes2/solid.IN
+#alemesh=meshes2/modelc
+
+!SetOutputPath={res3}
+
+!DefSolverGroup={FSCOUPLING|time}
+  !DefSolverSubGroup={FSCOUPLING|seq_fp_linesearch|FsMatrix|AleMatrix|ScaleFirstResidual[1000]}
+  !SetSolverGroup={FSCOUPLING|SUBITERATION|12}
+  !SetSolverGroup={FSCOUPLING|L2TOL|1e-8}
+
+!DefSolverMatrix={FsMatrix|SOLVER_MUMPS|Fluid|Solid|LM}
+  !SetSolverMatrix={FsMatrix|SupressOutput}
+  !SetSolverMatrix={FsMatrix|Ordering|parallel}
+  !SetSolverMatrix={FsMatrix|SolverMatrixCalculation|evaluate_every_build}
+
+!DefSolverMatrix={AleMatrix|SOLVER_MUMPS|AleProblem}
+  !SetSolverMatrix={AleMatrix|Ordering|parallel}
+  !SetSolverMatrix={AleMatrix|SupressOutput}
+  !SetSolverMatrix={AleMatrix|SolverMatrixCalculation|evaluate_every_build}
+
+!DefTimeStepScheme={time}
+  #timestep
+
+!UseBasis={QB |TRIANGLE_ELEMENT |NODAL_LAGRANGE2|GL6}
+!UseBasis={LB  |TRIANGLE_ELEMENT |NODAL_LAGRANGE1|GL6}
+!UseBasis={LmBasis    |ONED_ELEMENT     |NODAL_LAGRANGE2|GL6}
+!UseBasis={ConstTetBasis | TRIANGLE_ELEMENT | NODAL_LAGRANGE0 | GL6}
+
+!DefTopology={FluidVelTP  |#FluidVelocityTopology |QB}
+!DefTopology={FluidPresTP |#FluidPressureTopology |LB}
+!DefTopology={SolidDispTP |#SolidVelocityTopology |QB}
+!DefTopology={SolidPresTP |#SolidPressureTopology |LB}
+!DefTopology={BndryTP     |#LmTopology            |LmBasis}
+  !SetTopology={BndryTP | CreateInBoundary | [SolidPresTP;4]}
+
+!DefTopology={top_c | #alemesh | ConstTetBasis}
+  !SetTopology={top_c | MakeDiscontinuous}
+
+!DefInterface={OneToOne|FluidVelTP|FluidPresTP|top_c}
+!DefInterface={OneToOne|SolidDispTP|SolidPresTP}
+!DefInterface={ManyToOne|BndryTP|FluidVelTP|#FluidInterface| NestedInBndry[4]}
+!DefInterface={ManyToOne|BndryTP|SolidDispTP|#SolidInterface | NestedInBndry[4]}
+
+!DefVariablePointer={Vel            | FluidVelTP                                        | 2}
+!DefVariablePointer={Xf     | FluidVelTP            | #FluidVelocityTopology    | 2}
+!DefVariablePointer={XfO    | FluidVelTP            | #FluidVelocityTopology    | 2}
+!DefVariablePointer={Pf      | FluidPresTP                                       | 1}
+!DefVariablePointer={Wel            | FluidVelTP                                        | 2}
+!DefVariablePointer={SolVel         | SolidDispTP                                       | 2}
+!DefVariablePointer={Disp           | SolidDispTP                                       | 2}
+!DefVariablePointer={Xs     | SolidDispTP           | #SolidVelocityTopology    | 2}
+!DefVariablePointer={Ps      | SolidPresTP                                       | 1}
+!DefVariablePointer={Xb     | BndryTP               | #LmTopology               | 2}
+!DefVariablePointer={LMult          | BndryTP                                           | 2}
+!DefVariablePointer={Qual  |top_c|1}  % Stores the element quality
+!DefVariablePointer={Estiff |top_c|1}  % Variable that stores element stiffness
+
+
+!SetExportFrequency={XfO|Xs|Xb|-1}
+% !SetExportFrequency={XfO|Xf|Vel|Pf|Wel|Xs|SolVel|Disp|Ps|Xb|LMult|1}
+
+!DefProblem={Fluid|TRANSIENT_ALE_NONCON_NAVIER_STOKES_FLOW}
+  !UseVariablePointer={Space|Xf}
+  !UseVariablePointer={Velocity|Vel}
+  !UseVariablePointer={Pressure|Pf}
+  !UseVariablePointer={DomainVelocity|Wel}
+  !Density={#rhof}
+  !Viscosity={#muf}
+  !True-Navier-Poisson
+  !SetRootTopology={FluidVelTP}
+  !Boundary-patch-definitions
+    1       Vel         Dirichlet       vel_expr
+
+  !DefExpression={vel_expr}
+    0
+    sin(2*#pi*t) * sin(2*#pi*t) * #Vscale * (1 - (Xf.1 / 15)^2)
+
+!DefProblem={Solid|TRANSIENT_ELASTICITY}
+  !UseVariablePointer={Space|Xs}
+  !UseVariablePointer={Velocity|SolVel}
+  !UseVariablePointer={Displacement|Disp}
+  !UseVariablePointer={Pressure|Ps}
+  !Density={#rhos}
+  !ConstitutiveLaw={neohookean|#nhp}
+  !SetRootTopology={SolidDispTP}
+  !SetProblemTimeDiscretization={time_scheme_backward_euler|backward}
+  !Boundary-patch-definitions
+    2   SolVel  Dirichlet   0.0 0.0
+
+!DefProblem={LM|fscoupling_problem}
+  !UseVariablePointer={Space|Xb}
+  !AddTerms={TestVariable[Vel]    | LMult[1]           }
+  !AddTerms={TestVariable[SolVel] | LMult[-1]          }
+  !AddTerms={TestVariable[LMult*] | Vel[1] SolVel[-1]  }
+  !SetRootTopology={BndryTP}
+  !Boundary-patch-definitions
+    1  LMult    Dirichlet   0.0 0.0
+
+  %   !Boundary-conditions-not-required
+
+!DefProblem={AleProblem|ale_element_dependent_stiffness}
+  !UseVariablePointer={Space|XfO}
+  !UseVariablePointer={DomainVelocity|Wel}
+  !UseVariablePointer={AleSpace|Xf}
+  !UseVariablePointer={ElementQuality |Qual}
+  !UseVariablePointer={ElementStiffness|Estiff}
+  !Penalty-parameter={1}
+  !Radius-ratio-metric
+  !SetRootTopology={FluidVelTP}
+  !Boundary-patch-definitions
+    4       Wel     Dirichlet   Vel
+    1       Wel     Dirichlet   0.0 0.0

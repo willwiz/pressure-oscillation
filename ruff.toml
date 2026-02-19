@@ -4,6 +4,7 @@ indent-width = 4
 include = ["chearttest"]
 exclude = [".venv", "**/build"]
 preview = false
+pydocstyle.convention = "numpy"
 [lint]
 preview = false
 select = ["ALL"]
