@@ -38,7 +38,50 @@ PILOT_TESTS: list[ProblemDef] = [
         "output_dir": Path("results"),
         "time": {"start": 1, "end": 1000, "step": 0.001},
         "mesh": DEFAULT_MESH,
-        "loading": [{"type": "Sine", "period": 1.0, "cycles": 1, "max_vel": 200.0}],
+        "loading": [{"type": "Sine", "max_vel": 200.0, "period": 0.5, "cycles": 2}],
+        "material": {"type": "NeoHookean", "k": (k * 1000,)},
+    }
+    for k in [5, 10, 20, 30, 40, 50]
+]
+
+EXP_TESTS: list[ProblemDef] = [
+    {
+        "prefix": f"exponential-3_{k}kPa",
+        "output_dir": Path("results"),
+        "time": {"start": 1, "end": 1000, "step": 0.001},
+        "mesh": DEFAULT_MESH,
+        "loading": [{"type": "Sine", "max_vel": 200.0, "period": 0.5, "cycles": 2}],
+        "material": {"type": "isotropic-exponential", "k": (k * 1000, 3.0)},
+    }
+    for k in [5, 10, 20, 30, 40, 50]
+]
+
+TWO_EXP_PULSE: list[ProblemDef] = [
+    {
+        "prefix": f"pulse-2-exp_{k}kPa",
+        "output_dir": Path("results"),
+        "time": {"start": 1, "end": 1000, "step": 0.001},
+        "mesh": DEFAULT_MESH,
+        "loading": [
+            {"type": "Sine", "max_vel": 400.0, "period": 0.25, "cycles": 2},
+            {"type": "Hold", "duration": 0.5},
+        ],
+        "material": {"type": "isotropic-exponential", "k": (k * 1000, 3.0)},
+    }
+    for k in [5, 10, 20, 30, 40, 50]
+]
+
+
+TWO_NEO_PULSE: list[ProblemDef] = [
+    {
+        "prefix": f"pulse-2-neo_{k}kPa",
+        "output_dir": Path("results"),
+        "time": {"start": 1, "end": 1000, "step": 0.001},
+        "mesh": DEFAULT_MESH,
+        "loading": [
+            {"type": "Sine", "max_vel": 400.0, "period": 0.25, "cycles": 2},
+            {"type": "Hold", "duration": 0.5},
+        ],
         "material": {"type": "NeoHookean", "k": (k * 1000,)},
     }
     for k in [5, 10, 20, 30, 40, 50]

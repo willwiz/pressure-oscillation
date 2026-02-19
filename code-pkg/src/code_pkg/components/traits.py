@@ -32,4 +32,9 @@ class NeoHookeanMaterial(TypedDict, total=True):
     k: tuple[float]
 
 
-MaterialDef = NeoHookeanMaterial
+class IsotropicExponentialMaterial(TypedDict, total=True):
+    type: Literal["isotropic-exponential"]
+    k: tuple[float, float]
+
+
+MaterialDef = NeoHookeanMaterial | IsotropicExponentialMaterial

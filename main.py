@@ -5,7 +5,7 @@ from code_pkg.mesh.api import remake_mesh
 from pytools.logging import get_logger
 from pytools.parallel import ThreadedRunner
 
-from examples import PILOT_TESTS, TEST
+from examples import TEST, TWO_EXP_PULSE, TWO_NEO_PULSE
 from pfiles.pfile_inflation import create_pfile
 
 if TYPE_CHECKING:
@@ -20,14 +20,14 @@ def run(prob: ProblemDef) -> str:
         p = create_pfile(prob)
         p.write(f)
     run_prep(pfile, log=prob["output_dir"] / f"{prob['prefix']}_prep.log")
-    run_problem(pfile, cores=4, log=prob["output_dir"] / f"{prob['prefix']}.log")
+    run_problem(pfile, cores=4, log=prob["output_dir"] / f"{prob['prefix']}.log", output=False)
     return f"<<< {prob['prefix']} is complete"
 
 
 def main() -> None:
     get_logger(level="INFO")
     with ThreadedRunner(thread=6) as runner:
-        for p in PILOT_TESTS:
+        for p in TWO_NEO_PULSE + TWO_EXP_PULSE:
             print(f">>> Working on {p['prefix']}...")
             runner.submit(run, p)
 

@@ -1,6 +1,7 @@
 # pyright: reportUnknownMemberType=false
 
 
+import os
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, NamedTuple, TypedDict, Unpack
 
@@ -98,8 +99,10 @@ def summarize_pressure_diff_all(probs: Sequence[ProblemDef], **kwargs: Unpack[Pl
             print(e)
             raise SystemExit(1)
     kwargs = {"xlabel": "Time [s]", "ylabel": "Inlet - Apex [Pa]", **kwargs}
+    prefixes = [p["prefix"] for p in probs]
+    prefix = os.path.commonprefix(prefixes)
     plot_time_trace(
         {k.split("_")[-1]: {"x": v.time, "y": v.inlet - v.apex} for k, v in data.items()},
-        fout=probs[0]["output_dir"] / "pressure_diff_all.png",
+        fout=probs[0]["output_dir"] / f"{prefix}pressure_diff_all.png",
         **kwargs,
     )

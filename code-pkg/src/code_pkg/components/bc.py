@@ -24,10 +24,7 @@ def create_sine_curve(name: str, curve_def: SineCurve, start: float) -> IExpress
     end = start + curve_def["cycles"] * curve_def["period"]
     return create_expr(
         name,
-        [
-            f"{v:.8f}*sin({2 * np.pi / t:.8g}*t)*sin({2 * np.pi / t:.8g}*t)"
-            f"*(t>{start:.4f})*(t<{end:.4f})"
-        ],
+        [f"{v:.8f}*sin({np.pi / t:.8g}*t)*sin({np.pi / t:.8g}*t)*(t>{start:.4f})*(t<{end:.4f})"],
     )
 
 

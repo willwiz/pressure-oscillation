@@ -1,3 +1,5 @@
+from typing import TypedDict, Unpack
+
 from cheartpy.fe.api import (
     create_basis,
     create_boundary_basis,
@@ -95,25 +97,31 @@ def create_problem_topology(mesh: TopDef) -> ProblemTopology:
     )
 
 
-def create_fluid_variables(top: ProblemTopology) -> FluidVariables:
+class _Kwargs(TypedDict, total=False):
+    freq: int
+
+
+def create_fluid_variables(top: ProblemTopology, **kwargs: Unpack[_Kwargs]) -> FluidVariables:
     prefix = "Fluid"
-    xt = create_variable(f"{prefix}Xt", top.fluid1, 2, data=top.fluid1.mesh)
+    _freq = kwargs.get("freq", -1)
+    xt = create_variable(f"{prefix}Xt", top.fluid1, 2, data=top.fluid1.mesh, freq=_freq)
     x0 = create_variable(f"{prefix}X0", top.fluid1, 2, data=top.fluid1.mesh, freq=-1)
     return FluidVariables(
         Xt=xt,
         X0=x0,
-        V=create_variable(f"{prefix}V", top.fluid2, 2),
-        P=create_variable(f"{prefix}P", top.fluid1, 1),
-        W=create_variable(f"{prefix}W", top.fluid1, 2),
+        V=create_variable(f"{prefix}V", top.fluid2, 2, freq=_freq),
+        P=create_variable(f"{prefix}P", top.fluid1, 1, freq=_freq),
+        W=create_variable(f"{prefix}W", top.fluid1, 2, freq=_freq),
     )
 
 
-def create_solid_variables(top: ProblemTopology) -> SolidVariables:
+def create_solid_variables(top: ProblemTopology, **kwargs: Unpack[_Kwargs]) -> SolidVariables:
     prefix = "Solid"
+    _freq = kwargs.get("freq", -1)
     x = create_variable(f"{prefix}X", top.solid2, 2, data=top.solid2.mesh, freq=-1)
     return SolidVariables(
         X=x,
-        V=create_variable(f"{prefix}V", top.solid2, 2),
-        U=create_variable(f"{prefix}U", top.solid2, 2),
-        P=create_variable(f"{prefix}P", top.solid1, 1),
+        V=create_variable(f"{prefix}V", top.solid2, 2, freq=_freq),
+        U=create_variable(f"{prefix}U", top.solid2, 2, freq=_freq),
+        P=create_variable(f"{prefix}P", top.solid1, 1, freq=_freq),
     )

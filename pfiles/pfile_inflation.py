@@ -51,6 +51,7 @@ def create_pfile(prob: ProblemDef) -> PFile:
     g = create_solver_group("Main", time)
     g.add_solversubgroup(sg, *pres_sg)
     g.set_iteration("SUBITERATION", 12)
+    g.set_iteration("SUBITERFRACTION", 0.5)
     g.set_convergence("L2TOL", 1.0e-8)
     p = PFile()
     p.add_solvergroup(g)
