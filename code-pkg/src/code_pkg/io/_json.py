@@ -1,4 +1,4 @@
-# ruff: noqa: C901, PLR0911, PLR0912
+# ruff: noqa: C901, PLR0911
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeIs, get_args
@@ -27,7 +27,7 @@ from code_pkg.types import (
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
-    import optype.json as opj
+    from pytools.json import AnyObject, AnyValue
 
 
 def is_cheart_element_type(value: object) -> TypeIs[CheartElementType]:
@@ -43,7 +43,7 @@ def _parse_dir(path: object | None) -> Result[Path]:
     return Ok(path)
 
 
-def _parse_time_def(time_dict: opj.AnyValue) -> Result[TimeDef]:
+def _parse_time_def(time_dict: AnyValue) -> Result[TimeDef]:
     if not isinstance(time_dict, dict):
         return Err(ValueError("Invalid: 'time' is not a dictionary"))
     match time_dict.get("start"):
@@ -61,7 +61,7 @@ def _parse_time_def(time_dict: opj.AnyValue) -> Result[TimeDef]:
     return Ok(TimeDef(start=int(start), end=int(end), step=float(step)))
 
 
-def _parse_mesh_def(mesh_dict: opj.AnyValue) -> Result[MeshDef]:
+def _parse_mesh_def(mesh_dict: AnyValue) -> Result[MeshDef]:
     if not isinstance(mesh_dict, dict):
         return Err(ValueError("Invalid: mesh definition is not a dictionary"))
     match mesh_dict.get("name"):
@@ -77,7 +77,7 @@ def _parse_mesh_def(mesh_dict: opj.AnyValue) -> Result[MeshDef]:
     return Ok(MeshDef(name=name, elem=elem))
 
 
-def _parse_mesh_top_def(mesh_top_dict: opj.AnyValue) -> Result[Mapping[int, MeshDef]]:
+def _parse_mesh_top_def(mesh_top_dict: AnyValue) -> Result[Mapping[int, MeshDef]]:
     if not isinstance(mesh_top_dict, dict):
         return Err(ValueError("Invalid: mesh topology definition is not a dictionary"))
     mesh_top: dict[int, MeshDef] = {}
@@ -92,7 +92,7 @@ def _parse_mesh_top_def(mesh_top_dict: opj.AnyValue) -> Result[Mapping[int, Mesh
     return Ok(mesh_top)
 
 
-def _parse_top_bcpatch_def(bcpatch_dict: opj.AnyValue) -> Result[BCPatchDef]:
+def _parse_top_bcpatch_def(bcpatch_dict: AnyValue) -> Result[BCPatchDef]:
     if not isinstance(bcpatch_dict, dict):
         return Err(ValueError("Invalid: bcpatch definition is not a dictionary"))
     match bcpatch_dict.get("apex"):
@@ -116,7 +116,7 @@ def _parse_top_bcpatch_def(bcpatch_dict: opj.AnyValue) -> Result[BCPatchDef]:
     return Ok(BCPatchDef(apex=int(apex), inlet=int(inlet), interface=int(interface)))
 
 
-def _parse_top_def(top_dict: opj.AnyValue) -> Result[TopDef]:
+def _parse_top_def(top_dict: AnyValue) -> Result[TopDef]:
     if not isinstance(top_dict, dict):
         return Err(ValueError("Invalid: 'mesh' definition is not a dictionary"))
     match _parse_dir(top_dict.get("home")):
@@ -150,7 +150,7 @@ def _parse_top_def(top_dict: opj.AnyValue) -> Result[TopDef]:
     )
 
 
-def _parse_sine_curve_def(curve_dict: Mapping[str, opj.AnyValue]) -> Result[SineCurve]:
+def _parse_sine_curve_def(curve_dict: Mapping[str, AnyValue]) -> Result[SineCurve]:
     match curve_dict.get("max_vel"):
         case float(max_vel): ...  # fmt: skip
         case _:
@@ -168,7 +168,7 @@ def _parse_sine_curve_def(curve_dict: Mapping[str, opj.AnyValue]) -> Result[Sine
     )
 
 
-def _parse_hold_curve_def(curve_dict: Mapping[str, opj.AnyValue]) -> Result[HoldCurve]:
+def _parse_hold_curve_def(curve_dict: Mapping[str, AnyValue]) -> Result[HoldCurve]:
     match curve_dict.get("duration"):
         case float(duration): ...  # fmt: skip
         case _:
@@ -176,7 +176,7 @@ def _parse_hold_curve_def(curve_dict: Mapping[str, opj.AnyValue]) -> Result[Hold
     return Ok(HoldCurve(type="Hold", duration=float(duration)))
 
 
-def _parse_ramp_curve_def(curve_dict: Mapping[str, opj.AnyValue]) -> Result[RampCurve]:
+def _parse_ramp_curve_def(curve_dict: Mapping[str, AnyValue]) -> Result[RampCurve]:
     match curve_dict.get("max_vel"):
         case float(max_vel): ...  # fmt: skip
         case _:
@@ -188,7 +188,7 @@ def _parse_ramp_curve_def(curve_dict: Mapping[str, opj.AnyValue]) -> Result[Ramp
     return Ok(RampCurve(type="Ramp", max_vel=float(max_vel), duration=float(duration)))
 
 
-def _parse_loading_curve(curve_dict: opj.AnyValue) -> Result[LoadingCurveDef]:
+def _parse_loading_curve(curve_dict: AnyValue) -> Result[LoadingCurveDef]:
     if not isinstance(curve_dict, dict):
         return Err(ValueError("Invalid: loading curve definition is not a dictionary"))
     match curve_dict:
@@ -202,7 +202,7 @@ def _parse_loading_curve(curve_dict: opj.AnyValue) -> Result[LoadingCurveDef]:
             return Err(ValueError("Invalid: loading curve type must be 'Sine', 'Hold', or 'Ramp'"))
 
 
-def _parse_loading_time(loading_dict: opj.AnyValue) -> Result[Sequence[LoadingCurveDef]]:
+def _parse_loading_time(loading_dict: AnyValue) -> Result[Sequence[LoadingCurveDef]]:
     if not isinstance(loading_dict, list):
         return Err(ValueError("Invalid: 'loading' definition must be a list"))
     match all_ok([_parse_loading_curve(c) for c in loading_dict]):
@@ -212,7 +212,7 @@ def _parse_loading_time(loading_dict: opj.AnyValue) -> Result[Sequence[LoadingCu
     return Ok(loading)
 
 
-def _parse_jet_space_curve(loading_dict: opj.AnyValue) -> Result[LoadingSpaceDef]:
+def _parse_jet_space_curve(loading_dict: AnyValue) -> Result[LoadingSpaceDef]:
     if not isinstance(loading_dict, dict):
         return Err(ValueError("Invalid: 'loading' definition must be a dictionary"))
     match loading_dict.get("space"):
@@ -222,7 +222,7 @@ def _parse_jet_space_curve(loading_dict: opj.AnyValue) -> Result[LoadingSpaceDef
     return Ok(ParabolicJet(type="parabolic", width=15.0))
 
 
-def _parse_loading_def(loading_dict: opj.AnyValue) -> Result[LoadingDef]:
+def _parse_loading_def(loading_dict: AnyValue) -> Result[LoadingDef]:
     if not isinstance(loading_dict, dict):
         return Err(ValueError("Invalid: 'loading' definition must be a dictionary"))
     match _parse_loading_time(loading_dict.get("time")):
@@ -236,7 +236,7 @@ def _parse_loading_def(loading_dict: opj.AnyValue) -> Result[LoadingDef]:
     return Ok(LoadingDef(time=time, space=space))
 
 
-def _parse_neo_hookean(material_dict: Mapping[str, opj.AnyValue]) -> Result[NeoHookeanMaterial]:
+def _parse_neo_hookean(material_dict: Mapping[str, AnyValue]) -> Result[NeoHookeanMaterial]:
     match material_dict.get("k"):
         case [float(k)]: ...  # fmt: skip
         case _:
@@ -246,7 +246,7 @@ def _parse_neo_hookean(material_dict: Mapping[str, opj.AnyValue]) -> Result[NeoH
 
 
 def _parse_isotropic_exponential(
-    material_dict: Mapping[str, opj.AnyValue],
+    material_dict: Mapping[str, AnyValue],
 ) -> Result[IsotropicExponentialMaterial]:
     match material_dict.get("k"):
         case [float(k), float(b)]: ...  # fmt: skip
@@ -256,7 +256,7 @@ def _parse_isotropic_exponential(
     return Ok(IsotropicExponentialMaterial(type="isotropic-exponential", k=(k, b)))
 
 
-def _parse_material_def(material_dict: opj.AnyValue) -> Result[MaterialDef]:
+def _parse_material_def(material_dict: AnyValue) -> Result[MaterialDef]:
     if not isinstance(material_dict, dict):
         return Err(ValueError("Invalid: material definition is not a dictionary"))
     match material_dict:
@@ -270,12 +270,7 @@ def _parse_material_def(material_dict: opj.AnyValue) -> Result[MaterialDef]:
             )
 
 
-def import_problem_def(file: Path) -> Result[ProblemDef]:
-    """Import a problem definition from a JSON file."""
-    with file.open("r") as f:
-        raw_dict: opj.AnyValue = json.load(f)
-    if not isinstance(raw_dict, dict):
-        return Err(ValueError("Invalid: root of JSON is not a dictionary"))
+def parse_problem_def(raw_dict: AnyObject) -> Result[ProblemDef]:
     match raw_dict.get("prefix"):
         case str(prefix): ...  # fmt: skip
         case _:
@@ -305,3 +300,24 @@ def import_problem_def(file: Path) -> Result[ProblemDef]:
             prefix=prefix, output_dir=path, time=time, mesh=mesh, loading=loading, material=material
         )
     )
+
+
+def import_problem_def(file: Path) -> Result[ProblemDef]:
+    """Return a ProblemDef parsed from a JSON file.
+
+    Parameters
+    ----------
+    file: Path
+        Path to the JSON file containing the problem definition.
+
+    Returns
+    -------
+    Result[ProblemDef]
+        Ok(ProblemDef) if the file was successfully parsed, Err otherwise.
+
+    """
+    with file.open("r", encoding="utf-8") as f:
+        raw_dict: AnyValue = json.load(f)
+    if not isinstance(raw_dict, dict):
+        return Err(ValueError("Invalid: root of JSON is not a dictionary"))
+    return parse_problem_def(raw_dict)
