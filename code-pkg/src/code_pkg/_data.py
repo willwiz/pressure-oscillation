@@ -8,8 +8,6 @@ if TYPE_CHECKING:
     from cheartpy.fe.aliases import CheartElementType
     from cheartpy.fe.trait import IBCPatch, ICheartTopology, ITopInterface, IVariable
 
-    from .components.traits import MaterialDef
-
 
 class BCPatchDef(TypedDict, total=True):
     apex: int
