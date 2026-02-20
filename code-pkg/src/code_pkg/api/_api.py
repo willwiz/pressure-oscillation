@@ -44,4 +44,6 @@ def run(prob: ProblemDef, **kwargs: Unpack[MainKwargs]) -> str:
         p.write(f)
     run_prep(pfile, cores=4, log=prob["output_dir"] / f"{prob['prefix']}_prep.log")
     run_problem(pfile, cores=4, log=prob["output_dir"] / f"{prob['prefix']}.log", output=False)
-    return f"<<< {prob['prefix']} is complete"
+    if is_compelete(prob).ok():
+        return f"<<< {prob['prefix']} is complete"
+    return f"<<< {prob['prefix']} failed to complete ..."

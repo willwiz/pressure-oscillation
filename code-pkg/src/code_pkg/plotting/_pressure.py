@@ -109,3 +109,42 @@ def summarize_pressure_diff_all(probs: Iterable[ProblemDef], **kwargs: Unpack[Pl
         fout=output_dir / f"{prefix}pressure_diff_all.png",
         **kwargs,
     )
+
+
+class DPData[F: np.floating](NamedTuple):
+    time: A1[F]
+    v: A1[F]
+
+
+def summarize_pressure_oscillations_normalized(
+    probs: Iterable[ProblemDef], **kwargs: Unpack[PlotKwargs]
+) -> None:
+    prefixes = [p["prefix"] for p in probs]
+    prefix = os.path.commonprefix(prefixes)
+    output_dir = next(iter(probs))["output_dir"]
+    raw = {prob["prefix"]: import_pressure_data(prob) for prob in probs}
+    for prefix, res in raw.items():
+        match res:
+            case Ok(_): ...  # fmt: skip
+            case Err(e):
+                print(f"Failed to import {prefix}: {e}")
+    data = filter_ok(raw)
+    if not data:
+        print(f"No data found for {prefix} to plot.")
+        return
+    ref_response = {k: v for k, v in data.items() if "1000kPa" in k}
+    if len(ref_response) != 1:
+        print(f"Expected exactly one reference response with '1000kPa', found {len(ref_response)}.")
+        return
+    ref = next(iter(ref_response.values()))
+    test_responses = {k: v for k, v in data.items() if "1000kPa" not in k}
+    diff_res = {
+        k: DPData(v.time, (v.inlet - v.apex) - (ref.inlet - ref.apex))
+        for k, v in test_responses.items()
+    }
+    diff_res = {k: DPData(v.time, v.v / v.v.max()) for k, v in diff_res.items()}
+    plot_time_trace(
+        {k.split("_")[-1]: {"x": v.time, "y": v.v} for k, v in diff_res.items()},
+        fout=output_dir / f"{prefix}pressure_diff_normalized.png",
+        **kwargs,
+    )

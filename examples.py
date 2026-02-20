@@ -143,7 +143,7 @@ NEO_PULSE: dict[int, dict[int, dict[int, ProblemDef]]] = {
                 },
                 "material": {"type": "NeoHookean", "k": (k * 1000,)},
             }
-            for k in [5, 10, 20, 30, 40, 50]
+            for k in [5, 10, 20, 30, 40, 50, 1000]
         }
         for f in [2, 4, 8]
     }

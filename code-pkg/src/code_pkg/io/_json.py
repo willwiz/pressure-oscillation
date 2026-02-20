@@ -1,7 +1,10 @@
 # ruff: noqa: C901, PLR0911
+from __future__ import annotations
+
 import json
+from collections.abc import Generator, Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeIs, get_args
+from typing import TYPE_CHECKING, Any, TypeGuard, TypeIs, cast, get_args
 
 from cheartpy.fe.aliases import CheartElementType
 from pytools.result import Err, Ok, Result, all_ok
@@ -25,9 +28,7 @@ from code_pkg.types import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
-
-    from pytools.json import AnyObject, AnyValue
+    from pytools.json import AnyValue
 
 
 def is_cheart_element_type(value: object) -> TypeIs[CheartElementType]:
@@ -35,8 +36,8 @@ def is_cheart_element_type(value: object) -> TypeIs[CheartElementType]:
 
 
 def _parse_dir(path: object | None) -> Result[Path]:
-    if not isinstance(path, str):
-        return Err(ValueError("Invalid: 'output_dir' is not a string"))
+    if not isinstance(path, str | Path):
+        return Err(ValueError("Invalid: 'output_dir' is not a string|Path"))
     path = Path(path)
     if not path.exists():
         return Err(ValueError(f"Invalid: 'output_dir' path {path} does not exist"))
@@ -216,7 +217,7 @@ def _parse_jet_space_curve(loading_dict: AnyValue) -> Result[LoadingSpaceDef]:
     if not isinstance(loading_dict, dict):
         return Err(ValueError("Invalid: 'loading' definition must be a dictionary"))
     match loading_dict.get("space"):
-        case "parabolic": ...  # fmt: skip
+        case {"type": "parabolic"}: ...  # fmt: skip
         case _:
             return Err(ValueError("Invalid: 'loading.space' must be 'parabolic'"))
     return Ok(ParabolicJet(type="parabolic", width=15.0))
@@ -238,8 +239,9 @@ def _parse_loading_def(loading_dict: AnyValue) -> Result[LoadingDef]:
 
 def _parse_neo_hookean(material_dict: Mapping[str, AnyValue]) -> Result[NeoHookeanMaterial]:
     match material_dict.get("k"):
-        case [float(k)]: ...  # fmt: skip
+        case (int(k) | float(k), ): ...  # fmt: skip
         case _:
+            print(material_dict.get("k"))
             msg = "Invalid: 'material.k' for NeoHookean must be one float"
             return Err(ValueError(msg))
     return Ok(NeoHookeanMaterial(type="NeoHookean", k=(k,)))
@@ -249,7 +251,7 @@ def _parse_isotropic_exponential(
     material_dict: Mapping[str, AnyValue],
 ) -> Result[IsotropicExponentialMaterial]:
     match material_dict.get("k"):
-        case [float(k), float(b)]: ...  # fmt: skip
+        case (float(k) | int(k), float(b) | int(b)): ...  # fmt: skip
         case _:
             msg = "Invalid: 'material.k' for isotropic-exponential must be a tuple of two floats"
             return Err(ValueError(msg))
@@ -270,7 +272,7 @@ def _parse_material_def(material_dict: AnyValue) -> Result[MaterialDef]:
             )
 
 
-def parse_problem_def(raw_dict: AnyObject) -> Result[ProblemDef]:
+def parse_problem_def(raw_dict: Mapping[str, Any]) -> Result[ProblemDef]:
     match raw_dict.get("prefix"):
         case str(prefix): ...  # fmt: skip
         case _:
@@ -302,6 +304,19 @@ def parse_problem_def(raw_dict: AnyObject) -> Result[ProblemDef]:
     )
 
 
+def is_problem_def(raw_dict: object) -> TypeGuard[ProblemDef]:
+    if not isinstance(raw_dict, Mapping):
+        return False
+    raw_dict = cast("Mapping[Any, Any]", raw_dict)
+    if not all(isinstance(k, str) for k in raw_dict):
+        return False
+    raw_dict = cast("Mapping[str, Any]", raw_dict)
+    df = parse_problem_def(raw_dict)
+    if not df.ok():
+        print(df)
+    return df.ok()
+
+
 def import_problem_def(file: Path) -> Result[ProblemDef]:
     """Return a ProblemDef parsed from a JSON file.
 
@@ -321,3 +336,20 @@ def import_problem_def(file: Path) -> Result[ProblemDef]:
     if not isinstance(raw_dict, dict):
         return Err(ValueError("Invalid: root of JSON is not a dictionary"))
     return parse_problem_def(raw_dict)
+
+
+NestedDef = Mapping[Any, "NestedDef"] | Sequence["NestedDef"] | Generator["NestedDef"] | ProblemDef
+
+
+def iter_problem_defs(iterable: NestedDef) -> Generator[ProblemDef]:
+    if is_problem_def(iterable):
+        yield iterable
+    elif isinstance(iterable, Mapping):
+        for v in iterable.values():
+            yield from iter_problem_defs(v)  # pyright: ignore[reportArgumentType]
+    elif isinstance(iterable, Sequence):
+        for v in iterable:
+            yield from iter_problem_defs(v)
+    else:
+        for v in iterable:
+            yield from iter_problem_defs(v)
