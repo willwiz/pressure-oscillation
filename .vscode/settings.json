@@ -8,6 +8,7 @@
     "python.analysis.autoFormatStrings": true,
     "python.analysis.autoImportCompletions": true,
     "python.analysis.completeFunctionParens": true,
+    "python.analysis.diagnosticMode": "workspace",
     "python.analysis.diagnosticSeverityOverrides": {
         "reportMissingTypeStubs": "none",
     },
@@ -22,6 +23,10 @@
         "${workspaceFolder}/petsc",
         "${workspaceFolder}/libspatialindex",
         "${workspaceFolder}/libsupermesh",
+        "**/node_modules",
+        "**/__pycache__",
+        "**/.*",
+        ".venv",
     ],
     "search.exclude": {
         "**/*.D": true,

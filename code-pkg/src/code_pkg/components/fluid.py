@@ -52,10 +52,10 @@ def create_ale_problem(
 ) -> ALEElementDependentStiffness:
     _fmt = "BINARY" if kwargs.get("binary", False) else "TXT"
     elem_quality = create_variable(
-        "ALEquality", top.fluid0, 1, fmt=_fmt, freq=kwargs.get("freq", -1)
+        "ALEQuality", top.fluid0, 1, fmt=_fmt, freq=kwargs.get("freq", -1)
     )
     elem_stiffness = create_variable(
-        "ALEstiffness", top.fluid0, 1, fmt=_fmt, freq=kwargs.get("freq", -1)
+        "ALEStiffness", top.fluid0, 1, fmt=_fmt, freq=kwargs.get("freq", -1)
     )
     p = ALEElementDependentStiffness(
         "ALE",

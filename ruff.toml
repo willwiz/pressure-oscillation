@@ -3,15 +3,16 @@ line-length = 100
 indent-width = 4
 include = ["chearttest"]
 exclude = [".venv", "**/build"]
-preview = false
+preview = true
 pydocstyle.convention = "numpy"
 [lint]
-preview = false
+preview = true
 select = ["ALL"]
 ignore = [
     "T201",
-    "T203",    #COM812: Adds trailing comma to array expressions, resulting in bad autoformatting
-    "COM812",
+    "T203",
+    "COM812",  #COM812: Adds trailing comma to array expressions, conflict with autoformatting
+    "CPY001",
     "D100",
     "D101",
     "D102",
@@ -41,5 +42,7 @@ unfixable = []
     "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
 ]
 [format]
+preview = true
+line-ending = "lf"
 quote-style = "double"
 indent-style = "space"

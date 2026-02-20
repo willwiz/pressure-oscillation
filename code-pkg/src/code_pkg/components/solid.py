@@ -9,9 +9,7 @@ if TYPE_CHECKING:
     from cheartpy.fe.physics.solid_mechanics.solid_problems import SolidProblem
     from cheartpy.fe.trait import IBCPatch
 
-    from code_pkg.types import SolidVariables
-
-    from .traits import MaterialDef
+    from code_pkg.types import MaterialDef, SolidVariables
 
 
 class _Kwargs(TypedDict, total=False):

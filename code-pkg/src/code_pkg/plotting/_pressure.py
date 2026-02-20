@@ -1,8 +1,7 @@
 # pyright: reportUnknownMemberType=false
 
-
 import os
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, NamedTuple, TypedDict, Unpack
 
 import numpy as np
@@ -11,7 +10,7 @@ from pytools.plotting.api import (
     create_figure,
     update_figure_setting,
 )
-from pytools.result import Err, Ok, Result, all_ok
+from pytools.result import Err, Ok, Result, filter_ok
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -67,18 +66,17 @@ def import_pressure_data[F: np.floating](
     inlet = np.loadtxt(inlet_file)[:, 1]
     time = np.arange(prob["time"]["start"], prob["time"]["end"] + 1) * prob["time"]["step"]
     if len(time) != len(apex) or len(time) != len(inlet):
-        msg = f"Time length {len(time)} does not match data length {len(apex)}, {len(inlet)}"
+        msg = f"Time n={len(time)} does not match {len(apex)}, {len(inlet)} for {prob['prefix']}"
         return Err(ValueError(msg))
     return Ok(PressureData(time.astype(dtype), apex.astype(dtype), inlet.astype(dtype)))
 
 
 def summarize_pressure_diff(prob: ProblemDef) -> None:
     match import_pressure_data(prob):
-        case Ok(data):
-            pass
+        case Ok(data): ...  # fmt: skip
         case Err(e):
             print(e)
-            raise SystemExit(1)
+            return
     plot_time_trace(
         {
             "Apex": {"x": data.time, "y": data.apex},
@@ -91,18 +89,23 @@ def summarize_pressure_diff(prob: ProblemDef) -> None:
     )
 
 
-def summarize_pressure_diff_all(probs: Sequence[ProblemDef], **kwargs: Unpack[PlotKwargs]) -> None:
-    match all_ok({prob["prefix"]: import_pressure_data(prob) for prob in probs}):
-        case Ok(data):
-            pass
-        case Err(e):
-            print(e)
-            raise SystemExit(1)
-    kwargs = {"xlabel": "Time [s]", "ylabel": "Inlet - Apex [Pa]", **kwargs}
+def summarize_pressure_diff_all(probs: Iterable[ProblemDef], **kwargs: Unpack[PlotKwargs]) -> None:
     prefixes = [p["prefix"] for p in probs]
     prefix = os.path.commonprefix(prefixes)
+    output_dir = next(iter(probs))["output_dir"]
+    raw = {prob["prefix"]: import_pressure_data(prob) for prob in probs}
+    for prefix, res in raw.items():
+        match res:
+            case Ok(_): ...  # fmt: skip
+            case Err(e):
+                print(f"Failed to import {prefix}: {e}")
+    data = filter_ok(raw)
+    if not data:
+        print(f"No data found for {prefix} to plot.")
+        return
+    kwargs = {"xlabel": "Time [s]", "ylabel": "Inlet - Apex [Pa]", **kwargs}
     plot_time_trace(
         {k.split("_")[-1]: {"x": v.time, "y": v.inlet - v.apex} for k, v in data.items()},
-        fout=probs[0]["output_dir"] / f"{prefix}pressure_diff_all.png",
+        fout=output_dir / f"{prefix}pressure_diff_all.png",
         **kwargs,
     )

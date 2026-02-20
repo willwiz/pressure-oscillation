@@ -4,9 +4,11 @@ from cheartpy.fe.cmd import run_prep, run_problem
 from code_pkg.mesh.api import remake_mesh
 from pytools.logging import get_logger
 from pytools.parallel import ThreadedRunner
+from pytools.path import iter_unpack
 
-from examples import TEST, TWO_EXP_PULSE, TWO_NEO_PULSE
+from examples import NEO_PULSE, TEST
 from pfiles.pfile_inflation import create_pfile
+from summarize import summarize
 
 if TYPE_CHECKING:
     from code_pkg.types import ProblemDef
@@ -19,7 +21,7 @@ def run(prob: ProblemDef) -> str:
     with pfile.open("w") as f:
         p = create_pfile(prob)
         p.write(f)
-    run_prep(pfile, log=prob["output_dir"] / f"{prob['prefix']}_prep.log")
+    run_prep(pfile, cores=4, log=prob["output_dir"] / f"{prob['prefix']}_prep.log")
     run_problem(pfile, cores=4, log=prob["output_dir"] / f"{prob['prefix']}.log", output=False)
     return f"<<< {prob['prefix']} is complete"
 
@@ -27,9 +29,11 @@ def run(prob: ProblemDef) -> str:
 def main() -> None:
     get_logger(level="INFO")
     with ThreadedRunner(thread=6) as runner:
-        for p in TWO_NEO_PULSE + TWO_EXP_PULSE:
-            print(f">>> Working on {p['prefix']}...")
+        for p in iter_unpack(iter_unpack(NEO_PULSE)):
+            print(f">>> Submitted on {p['prefix']}...")
             runner.submit(run, p)
+    for pset in iter_unpack(NEO_PULSE):
+        summarize(pset.values())
 
 
 def main_pilot() -> None:
@@ -37,4 +41,5 @@ def main_pilot() -> None:
 
 
 if __name__ == "__main__":
+    # main_pilot()
     main()

@@ -35,7 +35,7 @@ def create_pfile(prob: ProblemDef) -> PFile:
     top = create_problem_topology(prob["mesh"])
     svars = create_solid_variables(top)
     fvars = create_fluid_variables(top)
-    bc = create_bcpatches(prob["mesh"], prob["loading"], svars, fvars, left=-15.0, right=15.0)
+    bc = create_bcpatches(prob["mesh"], prob["loading"], svars, fvars)
     solid = create_solid_problem(prob["material"], svars, bc.solid)
     fluid = create_fluid_problem(top, fvars, 4e-3, bc.fluid)
     ale = create_ale_problem(top, fvars, 1.0, bc.ale)

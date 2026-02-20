@@ -1,9 +1,17 @@
-from typing import TYPE_CHECKING, Required, TypedDict, Unpack
+from typing import TYPE_CHECKING
 
 import numpy as np
 from cheartpy.fe.api import create_bcpatch, create_expr
 
-from .traits import BCPatches, HoldCurve, LoadingCurveDef, RampCurve, SineCurve
+from code_pkg.types import (
+    BCPatches,
+    HoldCurve,
+    LoadingCurveDef,
+    LoadingDef,
+    LoadingSpaceDef,
+    RampCurve,
+    SineCurve,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -11,11 +19,6 @@ if TYPE_CHECKING:
     from cheartpy.fe.trait import IExpression
 
     from code_pkg.types import FluidVariables, SolidVariables, TopDef
-
-
-class _Kwargs(TypedDict, total=False):
-    left: Required[float]
-    right: Required[float]
 
 
 def create_sine_curve(name: str, curve_def: SineCurve, start: float) -> IExpression:
@@ -74,17 +77,24 @@ def create_time_curve(curve_def: Sequence[LoadingCurveDef]) -> IExpression:
     return bc
 
 
+def create_jet_curve(dfn: LoadingSpaceDef, fvars: FluidVariables) -> IExpression:
+    match dfn:
+        case {"type": "parabolic"}:
+            return create_expr(
+                "inlet_space_curve", [f"max(1 - ({fvars.Xt}.1/{dfn['width']:.4f})^2, 0)"]
+            )
+
+
 def create_bcpatches(
     mesh: TopDef,
-    dfn: Sequence[LoadingCurveDef],
+    dfn: LoadingDef,
     svars: SolidVariables,
     fvars: FluidVariables,
-    **kwargs: Unpack[_Kwargs],
 ) -> BCPatches:
-    time_curve = create_time_curve(dfn)
-    space_curve = f"max(1 - ({fvars.Xt}.1/{kwargs['right']})^2, 0)"
+    time_curve = create_time_curve(dfn["time"])
+    space_curve = create_jet_curve(dfn["space"], fvars)
     inlet_vel = create_expr("inlet_flow_vel", [0, f"{time_curve}*{space_curve}"])
-    inlet_vel.add_deps(time_curve)
+    inlet_vel.add_deps(time_curve, space_curve)
     return BCPatches(
         solid=[create_bcpatch(mesh["solid_bcpatch"]["inlet"], svars.V, "dirichlet", 0.0, 0.0)],
         fluid=[create_bcpatch(mesh["fluid_bcpatch"]["inlet"], fvars.V, "dirichlet", inlet_vel)],
